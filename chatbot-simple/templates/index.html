@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A polished multi-provider AI chatbot workspace with local chat history, model selection, attachments, and theme controls.">
+    <meta name="theme-color" content="#f4f6f8">
+    <title>AI Chat Workspace</title>
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <a class="skip-link" href="#chatMain">Skip to chat</a>
+
+    <main class="app-shell" data-app>
+        <aside class="sidebar" id="chatSidebar" aria-label="Chat history">
+            <header class="sidebar-header">
+                <div class="brand-mark" aria-hidden="true">G</div>
+                <div class="brand-copy">
+                    <strong>AI Chat</strong>
+                    <span>Workspace</span>
+                </div>
+                <button class="icon-button sidebar-close-button" type="button" aria-label="Close sidebar">
+                    <i data-lucide="x"></i>
+                </button>
+            </header>
+
+            <div class="sidebar-actions">
+                <button class="new-chat-button" type="button" data-action="new-chat">
+                    <i data-lucide="plus"></i>
+                    <span>New chat</span>
+                </button>
+                <button class="icon-button search-toggle-button" type="button" aria-label="Search conversations" aria-expanded="false">
+                    <i data-lucide="search"></i>
+                </button>
+            </div>
+
+            <label class="search-field" aria-label="Search conversations">
+                <i data-lucide="search"></i>
+                <input class="conversation-search-input" type="search" placeholder="Search chats">
+            </label>
+
+            <div class="conversation-toolbar">
+                <span>History</span>
+                <button class="text-button clear-all-button" type="button">Clear</button>
+            </div>
+
+            <nav class="conversation-list" aria-label="Conversations"></nav>
+        </aside>
+
+        <button class="sidebar-scrim" type="button" aria-label="Close sidebar"></button>
+
+        <section class="workspace" id="chatMain" aria-label="Main chat">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="icon-button mobile-menu-button" type="button" aria-label="Open sidebar" aria-controls="chatSidebar" aria-expanded="false">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div class="conversation-meta">
+                        <span class="meta-label">Active conversation</span>
+                        <h1 class="active-title">New chat</h1>
+                    </div>
+                </div>
+
+                <div class="topbar-actions">
+                    <label class="model-picker">
+                        <span class="sr-only">Model</span>
+                        <i data-lucide="cpu"></i>
+                        <select class="model-select" aria-label="Select AI model">
+                            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                        </select>
+                    </label>
+                    <button class="icon-button rename-chat-button" type="button" aria-label="Rename current chat">
+                        <i data-lucide="pencil"></i>
+                    </button>
+                    <button class="icon-button theme-toggle-button" type="button" aria-label="Toggle theme">
+                        <i data-lucide="moon"></i>
+                    </button>
+                    <button class="icon-button settings-button" type="button" aria-label="Open settings">
+                        <i data-lucide="settings-2"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="system-notice" role="status" hidden></div>
+
+            <div class="messages" aria-live="polite" aria-busy="false">
+                <div class="chat-thread"></div>
+            </div>
+
+            <form class="composer" autocomplete="off">
+                <div class="attachment-tray" hidden></div>
+                <div class="composer-row">
+                    <button class="icon-button attach-button" type="button" aria-label="Attach text file">
+                        <i data-lucide="paperclip"></i>
+                    </button>
+                    <button class="icon-button image-button" type="button" aria-label="Attach image">
+                        <i data-lucide="image-plus"></i>
+                    </button>
+                    <textarea class="message-input" rows="1" placeholder="Ask anything, or attach a text file for context" aria-label="Message"></textarea>
+                    <button class="stop-button" type="button" hidden>
+                        <i data-lucide="square"></i>
+                        <span>Stop</span>
+                    </button>
+                    <button class="send-button" type="submit" aria-label="Send message" disabled>
+                        <i data-lucide="arrow-up"></i>
+                    </button>
+                </div>
+                <input class="file-input" type="file" multiple hidden accept=".txt,.md,.csv,.json,.py,.js,.ts,.tsx,.jsx,.html,.css,.xml,.yaml,.yml,.log,text/*,application/json">
+                <input class="image-input" type="file" multiple hidden accept="image/png,image/jpeg,image/jpg,image/webp">
+            </form>
+        </section>
+    </main>
+
+    <section class="dialog-layer settings-dialog" aria-hidden="true">
+        <div class="dialog-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+            <header class="dialog-header">
+                <div>
+                    <span class="meta-label">Workspace</span>
+                    <h2 id="settingsTitle">Settings</h2>
+                </div>
+                <button class="icon-button dialog-close-button" type="button" aria-label="Close settings">
+                    <i data-lucide="x"></i>
+                </button>
+            </header>
+
+            <div class="settings-grid">
+                <section class="settings-section" aria-labelledby="themeSettingsTitle">
+                    <h3 id="themeSettingsTitle">Theme</h3>
+                    <div class="segmented-control" role="group" aria-label="Theme preference">
+                        <button type="button" data-theme-option="system">System</button>
+                        <button type="button" data-theme-option="light">Light</button>
+                        <button type="button" data-theme-option="dark">Dark</button>
+                    </div>
+                </section>
+
+                <section class="settings-section" aria-labelledby="modelSettingsTitle">
+                    <h3 id="modelSettingsTitle">Model</h3>
+                    <label class="settings-select">
+                        <span class="sr-only">Default model</span>
+                        <select class="settings-model-select" aria-label="Default model"></select>
+                    </label>
+                    <p class="settings-help">Provider credentials and defaults are loaded from .env.</p>
+                </section>
+
+                <section class="settings-section" aria-labelledby="behaviorSettingsTitle">
+                    <h3 id="behaviorSettingsTitle">Behavior</h3>
+                    <label class="switch-row">
+                        <span>
+                            <strong>Auto-scroll responses</strong>
+                            <small>Keep the latest answer in view while it streams.</small>
+                        </span>
+                        <input class="auto-scroll-toggle" type="checkbox">
+                    </label>
+                </section>
+
+                <section class="settings-section danger-zone" aria-labelledby="dataSettingsTitle">
+                    <h3 id="dataSettingsTitle">Local data</h3>
+                    <button class="danger-button clear-history-button" type="button">
+                        <i data-lucide="trash-2"></i>
+                        <span>Clear chat history</span>
+                    </button>
+                </section>
+            </div>
+        </div>
+    </section>
+
+    <section class="dialog-layer rename-dialog" aria-hidden="true">
+        <div class="dialog-panel compact-dialog" role="dialog" aria-modal="true" aria-labelledby="renameTitle">
+            <header class="dialog-header">
+                <div>
+                    <span class="meta-label">Conversation</span>
+                    <h2 id="renameTitle">Rename chat</h2>
+                </div>
+                <button class="icon-button rename-close-button" type="button" aria-label="Close rename dialog">
+                    <i data-lucide="x"></i>
+                </button>
+            </header>
+            <form class="rename-form">
+                <label class="form-field">
+                    <span>Name</span>
+                    <input class="rename-input" type="text" maxlength="80" required>
+                </label>
+                <div class="dialog-actions">
+                    <button class="secondary-button rename-cancel-button" type="button">Cancel</button>
+                    <button class="primary-button" type="submit">Save</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="dialog-layer confirm-dialog" aria-hidden="true">
+        <div class="dialog-panel compact-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+            <header class="dialog-header">
+                <div>
+                    <span class="meta-label">Confirm</span>
+                    <h2 id="confirmTitle">Clear history?</h2>
+                </div>
+                <button class="icon-button confirm-close-button" type="button" aria-label="Close confirmation">
+                    <i data-lucide="x"></i>
+                </button>
+            </header>
+            <p class="confirm-message">This removes conversations stored in this browser.</p>
+            <div class="dialog-actions">
+                <button class="secondary-button confirm-cancel-button" type="button">Cancel</button>
+                <button class="danger-button confirm-accept-button" type="button">Clear history</button>
+            </div>
+        </div>
+    </section>
+
+    <div class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</body>
+</html>
