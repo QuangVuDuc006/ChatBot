@@ -1,8 +1,9 @@
 import json
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, redirect, render_template, request, session, stream_with_context, url_for
+from flask import Flask, Response, jsonify, redirect, render_template, request, send_from_directory, session, stream_with_context, url_for
 
 
 load_dotenv()
@@ -20,11 +21,21 @@ IMAGE_MIME_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/webp"}
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY") or os.urandom(24)
 ai_router = ProviderRouter()
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+LANDING_DIST = PROJECT_ROOT / "chatbot-dashboard" / "dist"
 
 
 @app.get("/")
 def landing():
+    if (LANDING_DIST / "index.html").exists():
+        return send_from_directory(LANDING_DIST, "index.html")
+
     return render_template("landing.html")
+
+
+@app.get("/assets/<path:filename>")
+def landing_assets(filename):
+    return send_from_directory(LANDING_DIST / "assets", filename)
 
 
 @app.route("/login", methods=["GET", "POST"])

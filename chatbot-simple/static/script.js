@@ -25,9 +25,9 @@ document.addEventListener("DOMContentLoaded", () => {
         "log",
     ]);
     const SUGGESTIONS = [
-        "Draft a concise project plan for a provider-based Flask chatbot.",
-        "Review this idea and list the product risks I should fix first.",
-        "Turn my notes into a clear customer support response.",
+        "Compare two models on a strategy question.",
+        "Summarize attached research notes.",
+        "Create a structured workspace brief.",
     ];
 
     const els = {
@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
             conversations: [conversation],
             selectedProvider: DEFAULT_PROVIDER,
             selectedModel: DEFAULT_MODEL,
-            theme: "system",
+            theme: "dark",
             settings: {
                 autoScroll: true,
             },
@@ -207,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
             conversations,
             selectedProvider: String(saved?.selectedProvider || DEFAULT_PROVIDER),
             selectedModel: String(saved?.selectedModel || DEFAULT_MODEL),
-            theme: ["system", "light", "dark"].includes(saved?.theme) ? saved.theme : "system",
+            theme: ["system", "light", "dark"].includes(saved?.theme) ? saved.theme : "dark",
             settings: {
                 autoScroll: saved?.settings?.autoScroll !== false,
             },
@@ -373,7 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function getResolvedTheme() {
         if (state.theme === "system") {
-            return systemThemeQuery.matches ? "dark" : "light";
+            return "dark";
         }
 
         return state.theme;
@@ -385,7 +385,7 @@ document.addEventListener("DOMContentLoaded", () => {
         els.html.dataset.themeChoice = state.theme;
 
         if (els.metaTheme) {
-            els.metaTheme.setAttribute("content", resolvedTheme === "dark" ? "#090b0f" : "#f3f5f8");
+            els.metaTheme.setAttribute("content", "#020103");
         }
     }
 
@@ -998,8 +998,8 @@ document.addEventListener("DOMContentLoaded", () => {
         empty.className = "empty-state";
         empty.innerHTML = `
             <span class="empty-kicker">AI workspace</span>
-            <h2>Start with the thing you need answered.</h2>
-            <p>Ask a question, paste messy notes, or attach a text file. Your conversations stay in this browser.</p>
+            <h2>Start a focused AI research session.</h2>
+            <p>Ask a question, choose a model, attach files, and keep every useful conversation organized in this workspace.</p>
             <div class="suggestions">
                 ${SUGGESTIONS.map((suggestion) => `
                     <button class="suggestion-button" type="button" data-action="use-suggestion" data-suggestion="${escapeAttribute(suggestion)}">

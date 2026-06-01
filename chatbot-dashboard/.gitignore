@@ -2,3 +2,5 @@ node_modules/
 dist/
 vite-dev.log
 vite-dev.err.log
+server-*.out
+server-*.err
