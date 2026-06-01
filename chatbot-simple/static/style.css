@@ -138,6 +138,10 @@ svg {
     stroke-width: 1.8;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 ::selection {
     color: #ffffff;
     background: var(--accent);

@@ -2,7 +2,7 @@ import json
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, render_template, request, stream_with_context
+from flask import Flask, Response, jsonify, redirect, render_template, request, session, stream_with_context, url_for
 
 
 load_dotenv()
@@ -18,11 +18,27 @@ MAX_IMAGE_BYTES = 5 * 1024 * 1024
 IMAGE_MIME_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/webp"}
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY") or os.urandom(24)
 ai_router = ProviderRouter()
 
 
-@app.route("/")
-def index():
+@app.get("/")
+def landing():
+    return render_template("landing.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        session["chatbot_user"] = email or "guest"
+        return redirect(url_for("chat_page"))
+
+    return render_template("login.html")
+
+
+@app.get("/chat")
+def chat_page():
     return render_template("index.html")
 
 
