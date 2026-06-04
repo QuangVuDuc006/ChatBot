@@ -7,31 +7,31 @@ import { leftRevealVariants, rightRevealVariants } from "../../utils/motion";
 
 const caseStudies = [
   {
-    logo: "NOTE",
-    image: "https://images.unsplash.com/photo-1456324504439-367cee3b3c32?auto=format&fit=crop&w=900&q=85",
-    alt: "Research notes, laptop, and documents on a desk",
-    quote: "A graduate researcher turned 40 papers into organized literature notes",
-    body:
-      "Maya uploaded journal articles, compared summaries from multiple models, and saved each thread by topic. Her workspace became a searchable map of arguments, citations, and open questions.",
-    impact: ["40 Papers reviewed", "18 Topic threads", "3 Models compared", "12 Hours saved weekly"],
-  },
-  {
-    logo: "SPEC",
-    image: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=900&q=85",
-    alt: "Team reviewing product documents and technical plans",
-    quote: "A product team compared model responses before finalizing a launch brief",
-    body:
-      "The team uploaded user interviews, feature specs, and market notes. They used model comparison to test positioning, find weak assumptions, and keep the final brief tied to source material.",
-    impact: ["9 Source files", "4 Brief versions", "2.3x Faster review", "All decisions saved"],
-  },
-  {
     logo: "CODE",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=85",
-    alt: "Developer workspace with code and project notes",
-    quote: "An engineering lead kept architecture research and AI decisions together",
+    image: "https://images.unsplash.com/photo-1456324504439-367cee3b3c32?auto=format&fit=crop&w=900&q=85",
+    alt: "Developer notes and laptop on a desk",
+    quote: "A developer switches models based on the problem",
     body:
-      "Instead of scattering prompts across tools, the team stored tradeoff analysis, uploaded design docs, and compared implementation options in one project workspace.",
-    impact: ["6 Architecture threads", "24 Decisions logged", "3 Models tested", "Reusable project context"],
+      "Use a fast model for quick implementation questions, then switch to a stronger reasoning model for architecture decisions. The active model remains visible before every message.",
+    impact: ["OpenAI + DeepSeek", "Coding and reasoning", "Active model visible", "One saved history"],
+  },
+  {
+    logo: "STUDY",
+    image: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=900&q=85",
+    alt: "Student reviewing notes and documents",
+    quote: "A student uses existing API keys in one chatbot",
+    body:
+      "Connect Gemini and OpenRouter, detect available models, and choose a different model for explanations, summaries, or deeper reasoning without changing chat apps.",
+    impact: ["Bring your own keys", "Detected model list", "Manual model fallback", "Organized chats"],
+  },
+  {
+    logo: "TEST",
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=85",
+    alt: "Developer testing APIs on a computer",
+    quote: "An AI power user compares providers without dashboard hopping",
+    body:
+      "Save several provider connections, test them from one settings panel, and switch the active model from the top bar while keeping the conversation interface familiar.",
+    impact: ["Multiple providers", "Connection testing", "Fast model switching", "Custom endpoints"],
   },
 ];
 
@@ -59,9 +59,9 @@ export function CaseStudies() {
   return (
     <section id="case-studies" className="px-6 py-24 md:px-16 md:py-32">
       <SectionHeader
-        label="Case Studies"
-        title="Real ways people use an AI workspace"
-        description="See how model comparison, file analysis, and organized chat history support research-heavy work."
+        label="Use cases"
+        title="Choose a model based on the task"
+        description="Use one provider for speed, another for reasoning, or a custom endpoint for testing without changing the way you chat."
       />
       <motion.div
         className="cursor-grab overflow-hidden active:cursor-grabbing"
@@ -102,7 +102,7 @@ export function CaseStudies() {
                 </h3>
                 <p className="mt-5 text-base leading-7 text-mist-200">{activeCase.body}</p>
                 <div className="mt-8">
-                  <p className="mb-3 text-base font-semibold text-white">Impact :</p>
+                  <p className="mb-3 text-base font-semibold text-white">What stays simple:</p>
                   <ul className="grid gap-2 text-base font-semibold text-mist-100">
                     {activeCase.impact.map((item) => (
                       <li key={item} className="flex items-center gap-3">

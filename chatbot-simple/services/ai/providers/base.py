@@ -71,9 +71,9 @@ class AIProvider:
         return self.config.configured
 
     def ensure_configured(self):
-        if not self.config.api_key:
+        if self.config.requires_api_key and not self.config.api_key:
             raise MissingAPIKeyError(
-                f"Missing {self.config.api_key_env} in .env.",
+                "This provider requires an API key.",
                 provider=self.provider_id,
             )
 
@@ -96,6 +96,10 @@ class AIProvider:
 
     def available_models(self):
         return list(self.config.models)
+
+    def list_models(self):
+        self.ensure_configured()
+        return self.available_models()
 
     def supports_images(self, model=None):
         return False

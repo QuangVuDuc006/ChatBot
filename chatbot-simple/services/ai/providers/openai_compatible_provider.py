@@ -7,6 +7,7 @@ from services.ai.errors import (
     APIResponseFormatError,
     APITimeoutError,
     InvalidModelError,
+    ProviderAuthenticationError,
     RateLimitError,
     UpstreamAPIError,
 )
@@ -18,7 +19,73 @@ class OpenAICompatibleProvider(AIProvider):
         self.ensure_configured()
         return super().resolve_model(requested_model)
 
-    def generate_reply(self, message, model, attachments):
+    def request_headers(self, accept="application/json"):
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": accept,
+            "User-Agent": "NexaAI/1.0",
+        }
+
+        if self.config.api_key:
+            headers["Authorization"] = f"Bearer {self.config.api_key}"
+
+        if self.provider_id == "openrouter":
+            headers["HTTP-Referer"] = "https://nexa.ai"
+            headers["X-Title"] = "Nexa AI"
+
+        return headers
+
+    def list_models(self):
+        self.ensure_configured()
+        endpoint = f"{self.config.base_url.rstrip('/')}/models"
+        request = urllib.request.Request(
+            endpoint,
+            headers=self.request_headers(),
+            method="GET",
+        )
+
+        try:
+            with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            raise self.wrap_http_error(error, "") from error
+        except (TimeoutError, socket.timeout) as error:
+            raise APITimeoutError(
+                "Provider model detection timed out.",
+                provider=self.provider_id,
+            ) from error
+        except urllib.error.URLError as error:
+            raise UpstreamAPIError(
+                "Could not connect to provider.",
+                provider=self.provider_id,
+            ) from error
+        except json.JSONDecodeError as error:
+            raise APIResponseFormatError(
+                "Provider returned invalid model data.",
+                provider=self.provider_id,
+            ) from error
+
+        rows = payload.get("data") if isinstance(payload, dict) else None
+        if not isinstance(rows, list) and isinstance(payload, dict):
+            rows = payload.get("models")
+        if not isinstance(rows, list):
+            raise APIResponseFormatError(
+                "Provider model response did not contain a model list.",
+                provider=self.provider_id,
+            )
+
+        models = []
+        for row in rows:
+            if isinstance(row, str):
+                models.append(row)
+            elif isinstance(row, dict):
+                model_id = row.get("id") or row.get("name") or row.get("model")
+                if model_id:
+                    models.append({**row, "id": model_id})
+
+        return models
+
+    def build_chat_body(self, message, model, attachments, stream=False):
         user_content = build_user_content(message, attachments)
         _text_attachments, image_attachments = split_attachments(attachments)
         message_content = user_content
@@ -34,8 +101,9 @@ class OpenAICompatibleProvider(AIProvider):
                     },
                 })
 
-        body = {
+        return {
             "model": model,
+            "stream": stream,
             "messages": [
                 {
                     "role": "user",
@@ -43,6 +111,9 @@ class OpenAICompatibleProvider(AIProvider):
                 },
             ],
         }
+
+    def generate_reply(self, message, model, attachments):
+        body = self.build_chat_body(message, model, attachments, stream=False)
         data = self.post_chat_completions(body, model)
 
         try:
@@ -64,7 +135,18 @@ class OpenAICompatibleProvider(AIProvider):
         return reply
 
     def stream_reply(self, message, model, attachments):
-        yield self.generate_reply(message, model, attachments)
+        body = self.build_chat_body(message, model, attachments, stream=True)
+        yielded = False
+
+        for text in self.stream_chat_completions(body, model):
+            yielded = True
+            yield text
+
+        if not yielded:
+            reply = self.generate_reply(message, model, attachments)
+
+            if reply:
+                yield reply
 
     def supports_images(self, model=None):
         if self.config.supports_images_override is not None:
@@ -89,23 +171,52 @@ class OpenAICompatibleProvider(AIProvider):
         return any(marker in normalized_model for marker in vision_markers)
 
     def post_chat_completions(self, body, model):
+        response_body = self.open_chat_request(body, model, accept="application/json")
+
+        try:
+            return json.loads(response_body)
+        except json.JSONDecodeError as error:
+            raise APIResponseFormatError(
+                "AI API returned invalid JSON.",
+                provider=self.provider_id,
+                model=model,
+            ) from error
+
+    def stream_chat_completions(self, body, model):
         endpoint = f"{self.config.base_url.rstrip('/')}/chat/completions"
         payload = json.dumps(body).encode("utf-8")
         request = urllib.request.Request(
             endpoint,
             data=payload,
-            headers={
-                "Authorization": f"Bearer {self.config.api_key}",
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "User-Agent": "ChatbotSimple/1.0",
-            },
+            headers=self.request_headers("text/event-stream"),
             method="POST",
         )
 
         try:
             with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
-                response_body = response.read().decode("utf-8")
+                for raw_line in response:
+                    line = raw_line.decode("utf-8", errors="replace").strip()
+
+                    if not line or line.startswith(":"):
+                        continue
+
+                    if not line.startswith("data:"):
+                        continue
+
+                    data = line.removeprefix("data:").strip()
+
+                    if data == "[DONE]":
+                        break
+
+                    try:
+                        event = json.loads(data)
+                    except json.JSONDecodeError:
+                        continue
+
+                    text = self.extract_stream_text(event)
+
+                    if text:
+                        yield text
         except urllib.error.HTTPError as error:
             raise self.wrap_http_error(error, model) from error
         except (TimeoutError, socket.timeout) as error:
@@ -131,13 +242,60 @@ class OpenAICompatibleProvider(AIProvider):
                 details=reason,
             ) from error
 
+    def extract_stream_text(self, event):
         try:
-            return json.loads(response_body)
-        except json.JSONDecodeError as error:
-            raise APIResponseFormatError(
-                "AI API returned invalid JSON.",
+            choice = event["choices"][0]
+        except (KeyError, IndexError, TypeError):
+            return ""
+
+        delta = choice.get("delta") or {}
+
+        if isinstance(delta.get("content"), str):
+            return delta["content"]
+
+        message = choice.get("message") or {}
+
+        if isinstance(message.get("content"), str):
+            return message["content"]
+
+        return ""
+
+    def open_chat_request(self, body, model, accept):
+        endpoint = f"{self.config.base_url.rstrip('/')}/chat/completions"
+        payload = json.dumps(body).encode("utf-8")
+        request = urllib.request.Request(
+            endpoint,
+            data=payload,
+            headers=self.request_headers(accept),
+            method="POST",
+        )
+
+        try:
+            with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
+                return response.read().decode("utf-8")
+        except urllib.error.HTTPError as error:
+            raise self.wrap_http_error(error, model) from error
+        except (TimeoutError, socket.timeout) as error:
+            raise APITimeoutError(
+                "AI API request timed out. Please try again.",
                 provider=self.provider_id,
                 model=model,
+            ) from error
+        except urllib.error.URLError as error:
+            reason = str(getattr(error, "reason", error))
+            if "timed out" in reason.lower():
+                raise APITimeoutError(
+                    "AI API request timed out. Please try again.",
+                    provider=self.provider_id,
+                    model=model,
+                    details=reason,
+                ) from error
+
+            raise UpstreamAPIError(
+                "Could not connect to AI API.",
+                provider=self.provider_id,
+                model=model,
+                details=reason,
             ) from error
 
     def wrap_http_error(self, error, model):
@@ -157,16 +315,15 @@ class OpenAICompatibleProvider(AIProvider):
             )
 
         if error.code == 401:
-            return UpstreamAPIError(
-                f"Provider rejected the API key: {details}",
+            return ProviderAuthenticationError(
+                "Invalid API key.",
                 provider=self.provider_id,
                 model=model,
-                details=details,
             )
 
         if error.code == 403 and self.is_cloudflare_access_denied(details):
             return UpstreamAPIError(
-                "The configured API endpoint is blocked by Cloudflare. Check that CUSTOM_BASE_URL points to the provider's OpenAI-compatible API endpoint, not the website or management API.",
+                "The configured API endpoint is blocked by Cloudflare. Check the provider base URL and access policy.",
                 provider=self.provider_id,
                 model=model,
                 details=details,

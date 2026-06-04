@@ -17,7 +17,7 @@ function ProcessVisual({ type }) {
           <span className="absolute inset-12 rounded-full border border-white/[0.08]" />
         </div>
         <div className="grid gap-1.5">
-          {["New chat", "Research notes", "Uploaded files", "Saved prompts", "Model choice"].map((row) => (
+          {["API key", "Optional Base URL", "Auto-detect models", "Detected model", "Manual fallback"].map((row) => (
             <span key={row} className="rounded-[3px] border border-white/10 px-2 py-1 text-[10px] font-semibold text-white">
               {row}
             </span>
@@ -32,12 +32,12 @@ function ProcessVisual({ type }) {
       <div className="border border-white/10 bg-black/30 p-4 font-mono text-[10px] leading-5 text-mist-200">
         <div className="mb-3 h-2 w-24 rounded-full bg-white/10" />
         <p>
-          <span className="text-violetx-400">ask</span> workspace.model("Compare"):
+          <span className="text-violetx-400">connect</span> provider.api():
         </p>
-        <p className="pl-4">use files: product_brief.pdf</p>
-        <p className="pl-4">models: gpt-4o, claude</p>
-        <p className="pl-4">return strongest answer</p>
-        <p className="pl-4">save to workspace</p>
+        <p className="pl-4">paste encrypted API key</p>
+        <p className="pl-4">request available models</p>
+        <p className="pl-4">or enter model manually</p>
+        <p className="pl-4">test and save connection</p>
       </div>
     );
   }
@@ -61,9 +61,9 @@ function ProcessVisual({ type }) {
   return (
     <div className="grid gap-2 border border-white/10 bg-black/30 p-4">
       {[
-        ["Research summary", "Saved to workspace", MessageSquare],
-        ["Source document", "Analysis complete", Upload],
-        ["Final answer", "Ready to reuse", Check],
+        ["Active model", "Using Claude Sonnet", MessageSquare],
+        ["Provider settings", "Connection saved", Upload],
+        ["New message", "Ready to send", Check],
       ].map(([title, meta, Icon]) => (
         <div key={title} className="flex items-center gap-3 rounded-[5px] border border-white/10 px-3 py-2">
           <Icon size={15} className="text-violetx-400" />
@@ -82,8 +82,8 @@ export function Process() {
     <section id="process" className="px-6 py-24 md:px-16 md:py-32">
       <SectionHeader
         label="Workflow"
-        title="From question to organized research"
-        description="A simple flow for starting a chat, adding context, comparing models, and saving the useful parts."
+        title="Connect once, then start chatting"
+        description="Paste an API key, detect or enter a model, choose what to use, and send your first message."
       />
       <motion.div
         className="grid gap-4 md:grid-cols-2"

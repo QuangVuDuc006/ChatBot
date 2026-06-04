@@ -22,17 +22,17 @@ function TagGroup({ tags }) {
 
 function TaskMockup() {
   const rows = [
-    ["Strategy chat", "GPT-4o active", CircleDollarSign],
-    ["Research thread", "Claude saved", Users],
-    ["Meeting notes", "Gemini compared", CalendarDays],
-    ["Product brief", "70% reviewed", FileText],
+    ["OpenAI", "Using GPT model", CircleDollarSign],
+    ["Google Gemini", "Models detected", Users],
+    ["Anthropic Claude", "Connection saved", CalendarDays],
+    ["OpenRouter", "Ready to configure", FileText],
   ];
 
   return (
     <div className="mx-auto max-w-[380px] rounded-[17px] border border-white/10 bg-[#050505] p-4">
       <div className="mb-4 flex rounded-[5px] border border-white/10 bg-white/[0.035] p-1 text-[11px] font-semibold">
-        <span className="rounded-[4px] bg-white/10 px-2 py-1 text-white">All Chats</span>
-        <span className="px-2 py-1 text-mist-200">Recent research</span>
+        <span className="rounded-[4px] bg-white/10 px-2 py-1 text-white">Providers</span>
+        <span className="px-2 py-1 text-mist-200">Saved connections</span>
       </div>
       <div className="grid gap-2">
         {rows.map(([title, meta, Icon], index) => (
@@ -61,12 +61,12 @@ function AssistantMockup() {
         <div className="absolute inset-0 rounded-full bg-violetx-500/[0.45] blur-xl" />
         <div className="absolute inset-2 rounded-full bg-[conic-gradient(from_40deg,transparent,rgba(184,135,255,0.9),transparent,rgba(111,52,197,0.8),transparent)]" />
       </div>
-      <p className="text-sm font-semibold text-white">What can I help with?</p>
+      <p className="text-sm font-semibold text-white">Models detected</p>
       <p className="mx-auto mt-2 max-w-[260px] text-[10px] leading-4 text-mist-400">
-        Upload a document, ask a question, or compare answers from different AI models.
+        Choose a detected model or enter a model ID manually.
       </p>
       <div className="mt-6 flex items-center rounded-[6px] border border-white/10 bg-white/[0.025] p-2 text-left text-[11px] text-mist-400">
-        Summarize this product brief
+        Select a model
         <Send className="ml-auto text-violetx-400" size={14} />
       </div>
     </div>
@@ -77,17 +77,17 @@ function EmailMockup() {
   return (
     <div className="mx-auto max-w-[380px] rounded-[17px] border border-white/10 bg-[#050505] p-4">
       <div className="mb-3 flex items-center justify-between rounded-[6px] border border-white/10 bg-white/[0.025] px-3 py-2">
-        <span className="text-xs font-semibold text-white">Compare models</span>
+        <span className="text-xs font-semibold text-white">Switch active model</span>
         <Clock3 size={15} className="text-violetx-400" />
       </div>
       <div className="mb-3 flex gap-2">
-        {["GPT-4o", "Claude", "Gemini"].map((tag) => (
+        {["Writing", "Coding", "Reasoning"].map((tag) => (
           <span key={tag} className="rounded-full border border-white/[0.14] px-2 py-1 text-[10px] text-white">
             {tag}
           </span>
         ))}
       </div>
-      {[["Market summary", "Clearer structure", "Selected"], ["Risk analysis", "More detailed", "Draft"]].map(([name, role, status], index) => (
+      {[["Claude Sonnet", "Anthropic Claude", "Using"], ["Gemini Flash", "Google Gemini", "Saved"]].map(([name, role, status], index) => (
         <div key={name} className={`mb-2 rounded-[7px] border border-white/[0.08] bg-white/[0.035] p-3 ${index ? "opacity-35" : ""}`}>
           <div className="flex items-center gap-3">
             <span className="h-8 w-8 rounded-full bg-white/[0.16]" />
@@ -106,17 +106,17 @@ function EmailMockup() {
 function ProjectMockup() {
   return (
     <div className="mx-auto max-w-[390px] rounded-[17px] border border-white/10 bg-[#050505] p-4">
-      <p className="text-xs font-bold text-white">Hey David!</p>
-      <p className="mb-4 text-[11px] text-mist-300">Here is your saved research workspace</p>
+      <p className="text-xs font-bold text-white">Saved chats</p>
+      <p className="mb-4 text-[11px] text-mist-300">Continue any conversation from one sidebar</p>
       <div className="rounded-[8px] border border-white/10 bg-white/[0.035] p-3">
-        <p className="mb-3 text-xs font-semibold text-white">Active project :</p>
+      <p className="mb-3 text-xs font-semibold text-white">Recent chat:</p>
         <div className="flex items-center gap-3 rounded-[6px] border border-white/[0.08] bg-white/[0.04] p-3">
           <span className="grid h-8 w-8 place-items-center rounded-[6px] bg-white/[0.08]">
             <FileText size={15} />
           </span>
           <div className="flex-1">
-            <p className="text-xs font-semibold text-white">Competitor research</p>
-            <p className="text-[10px] text-mist-400">12 chats saved</p>
+            <p className="text-xs font-semibold text-white">API integration help</p>
+            <p className="text-[10px] text-mist-400">Using DeepSeek</p>
           </div>
           <span className="h-4 w-4 rounded-full border border-white/60 border-r-violetx-500" />
         </div>
@@ -155,8 +155,8 @@ export function Services() {
     <section id="services" className="px-6 py-24 md:px-16 md:py-32">
       <SectionHeader
         label="Features"
-        title="Everything you need for focused AI work"
-        description="Chat, compare, upload, and organize without jumping between separate AI tools."
+        title="Why this chatbot is different"
+        description="Connect the AI APIs you already use, switch models clearly, and keep one simple chat interface."
       />
       <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.12 }} className="grid gap-24">
         {services.map((service, index) => (

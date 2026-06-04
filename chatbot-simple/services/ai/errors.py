@@ -21,9 +21,6 @@ class AIProviderError(Exception):
         if self.model:
             payload["model"] = self.model
 
-        if self.details:
-            payload["details"] = self.details
-
         return payload
 
 
@@ -35,6 +32,11 @@ class MissingAPIKeyError(AIProviderError):
 class MissingProviderConfigError(AIProviderError):
     status_code = 500
     code = "missing_provider_config"
+
+
+class ProviderAuthenticationError(AIProviderError):
+    status_code = 401
+    code = "invalid_api_key"
 
 
 class InvalidProviderError(AIProviderError):

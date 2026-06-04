@@ -11,8 +11,8 @@ export function Testimonials() {
     <section id="testimonials" className="px-6 py-24 md:px-16 md:py-32">
       <SectionHeader
         label="Testimonials"
-        title="How people use Xtract to think with AI"
-        description="Researchers, builders, and operators use one workspace for chats, files, and model comparison."
+        title="Built for people who use more than one AI API"
+        description="Developers, students, writers, and model testers use Nexa AI to keep provider switching straightforward."
       />
       <motion.div
         className="grid gap-4 lg:grid-cols-2"

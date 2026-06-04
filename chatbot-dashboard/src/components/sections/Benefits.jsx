@@ -10,8 +10,8 @@ export function Benefits() {
     <section id="benefits" className="px-6 py-24 md:px-16 md:py-32">
       <SectionHeader
         label="Benefits"
-        title="Why teams keep AI work in one workspace"
-        description="Reduce tab switching, preserve context, and make stronger decisions from model responses and source files."
+        title="Many models, one clear interface"
+        description="Nexa AI keeps provider choice visible and the everyday chat experience simple."
       />
       <motion.div
         variants={staggerContainer}

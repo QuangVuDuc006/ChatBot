@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Button } from "../ui/Button";
+import { WorkspaceButton } from "../auth/WorkspaceButton";
 import { Reveal } from "../ui/Reveal";
 
 export function CTA() {
@@ -15,12 +15,12 @@ export function CTA() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(141,77,232,0.32),transparent_38%),radial-gradient(circle_at_100%_100%,rgba(111,52,197,0.34),transparent_40%)]" />
           <div className="relative z-10">
             <h2 className="text-balance text-4xl font-semibold leading-[1.03] tracking-[-0.06em] text-white md:text-5xl">
-              Start your next AI research session in one workspace
+              Paste an API key. Pick a model. Start chatting.
             </h2>
-            <p className="mt-5 text-sm font-medium text-mist-200">Open the chat app, choose a model, upload files, and keep the conversation saved.</p>
-            <Button href="/chat" className="mt-6" icon>
+            <p className="mt-5 text-sm font-medium text-mist-200">Use one clean chatbot for the providers and models you already rely on.</p>
+            <WorkspaceButton className="mt-6" icon>
               Start chatting
-            </Button>
+            </WorkspaceButton>
           </div>
         </motion.div>
       </Reveal>

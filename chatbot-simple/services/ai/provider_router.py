@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from services.ai.config import get_default_provider_id, get_provider_configs
 from services.ai.errors import InvalidProviderError
 from services.ai.providers.base import AIResponse
-from services.ai.providers.custom_provider import CustomProvider
 from services.ai.providers.gemini_provider import GeminiProvider
 from services.ai.providers.openai_compatible_provider import OpenAICompatibleProvider
+from services.ai.provider_registry import get_provider_definition
 
 
 @dataclass(frozen=True)
@@ -16,16 +16,30 @@ class AIStream:
 
 
 class ProviderRouter:
-    def __init__(self):
+    def __init__(self, runtime_config=None):
         configs = get_provider_configs()
         self.providers = {
             "gemini": GeminiProvider(configs["gemini"]),
             "openai": OpenAICompatibleProvider(configs["openai"]),
             "openrouter": OpenAICompatibleProvider(configs["openrouter"]),
-            "custom": CustomProvider(configs["custom"]),
         }
 
+        if runtime_config:
+            definition = get_provider_definition(runtime_config.provider_id)
+            if not definition:
+                raise InvalidProviderError(
+                    f"Invalid provider '{runtime_config.provider_id}'.",
+                    provider=runtime_config.provider_id,
+                )
+            self.providers[runtime_config.provider_id] = definition.adapter_class(runtime_config)
+            self.runtime_provider_id = runtime_config.provider_id
+        else:
+            self.runtime_provider_id = None
+
     def default_provider_id(self):
+        if self.runtime_provider_id:
+            return self.runtime_provider_id
+
         configured_default = get_default_provider_id()
 
         if configured_default in self.providers:
@@ -44,31 +58,6 @@ class ProviderRouter:
             )
 
         return provider
-
-    def list_provider_options(self, provider_id=None):
-        active_provider = self.get_provider(provider_id)
-        providers = []
-
-        for provider in self.providers.values():
-            models = provider.available_models()
-            default_model = provider.default_model
-            providers.append({
-                "id": provider.provider_id,
-                "label": provider.label,
-                "models": models,
-                "default_model": default_model,
-                "configured": provider.is_configured(),
-                "supports_images": provider.supports_images(default_model),
-            })
-
-        return {
-            "providers": providers,
-            "active_provider": active_provider.provider_id,
-            "models": active_provider.available_models(),
-            "active": active_provider.default_model,
-            "default": active_provider.default_model,
-            "supports_images": active_provider.supports_images(active_provider.default_model),
-        }
 
     def generate(self, provider_id, message, model=None, attachments=None):
         provider = self.get_provider(provider_id)

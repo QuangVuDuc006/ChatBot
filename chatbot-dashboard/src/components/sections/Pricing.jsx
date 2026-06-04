@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { pricingPlans } from "../../data/landingData";
 import { staggerContainer } from "../../utils/motion";
-import { Button } from "../ui/Button";
+import { WorkspaceButton } from "../auth/WorkspaceButton";
 import { GlowCard } from "../ui/GlowCard";
 import { PricingToggle } from "../ui/PricingToggle";
 import { SectionHeader } from "../ui/SectionHeader";
@@ -22,8 +22,8 @@ export function Pricing() {
     <section id="pricing" className="px-6 py-24 md:px-12 md:py-32">
       <SectionHeader
         label="Pricing"
-        title="Choose the workspace that fits your AI workflow"
-        description="Start with core multi-model chat, then scale into file-heavy research and shared project workspaces."
+        title="Choose the setup that fits how you use AI APIs"
+        description="Start with your own provider keys, then add more connections and controls as you need them."
       />
       <PricingToggle value={billing} onChange={setBilling} />
       <motion.div
@@ -57,14 +57,14 @@ export function Pricing() {
                   <span className="text-4xl font-semibold tracking-[-0.06em] text-white">{price}</span>
                   {!isCustom && <span className="pb-1 text-sm font-medium text-mist-200">/month</span>}
                 </div>
-                <p className="mt-2 text-xs font-medium text-mist-300">{isCustom ? "Tailored pricing for complex teams" : billingNote}</p>
+                <p className="mt-2 text-xs font-medium text-mist-300">{isCustom ? "Custom setup for larger deployments" : billingNote}</p>
               </div>
               <p className="mt-4 min-h-[50px] text-sm leading-6 text-mist-200">{description}</p>
-              <Button href="/chat" variant={popular ? "primary" : "secondary"} icon={false} className="mt-7 w-full">
+              <WorkspaceButton variant={popular ? "primary" : "secondary"} icon={false} className="mt-7 w-full">
                 {cta}
-              </Button>
+              </WorkspaceButton>
               <div className="mt-8">
-                <p className="mb-4 text-sm font-semibold text-mist-200">What's Included:</p>
+                <p className="mb-4 text-sm font-semibold text-mist-200">What's included:</p>
                 <ul className="grid gap-3">
                   {features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3 text-sm font-semibold leading-5 text-white">

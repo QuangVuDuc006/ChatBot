@@ -94,11 +94,39 @@ html {
 }
 
 .platform-ticker-track {
-  animation: platform-ticker-scroll 22s linear infinite;
+  animation: platform-ticker-scroll 28s linear infinite;
+  will-change: transform;
+}
+
+.platform-ticker-track.is-reverse {
+  animation-direction: reverse;
+  animation-duration: 34s;
 }
 
 .platform-ticker:hover .platform-ticker-track {
   animation-play-state: paused;
+}
+
+.platform-ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  transition:
+    color 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.platform-ticker-item svg {
+  flex: 0 0 auto;
+  color: #b887ff;
+}
+
+.platform-ticker-item:hover {
+  color: #ffffff;
+  border-color: rgba(184, 135, 255, 0.3);
+  background-color: rgba(141, 77, 232, 0.12);
 }
 
 @keyframes platform-ticker-scroll {

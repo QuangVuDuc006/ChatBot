@@ -2,21 +2,20 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { navItems } from "../../data/landingData";
-import { Button } from "../ui/Button";
+import { WorkspaceButton } from "../auth/WorkspaceButton";
+import { useAuth } from "../../hooks/useAuth";
 
 function Logo() {
   return (
-    <a className="flex min-w-0 shrink-0 items-center gap-2" href="/" aria-label="Xtract home">
-      <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-white text-ink-950">
-        <span className="relative h-3.5 w-3.5 rounded-[4px] bg-ink-950 before:absolute before:-right-1 before:-top-1 before:h-2 before:w-2 before:rounded-full before:bg-violetx-500 after:absolute after:-bottom-1 after:-left-1 after:h-2 after:w-2 after:rounded-full after:bg-white" />
-      </span>
-      <span className="text-lg font-black tracking-[-0.06em] text-white">XTRACT</span>
+    <a className="flex min-w-0 shrink-0 items-center" href="/" aria-label="Nexa AI home">
+      <img className="h-[40px] w-auto max-w-[190px] bg-transparent object-contain sm:h-[52px] sm:max-w-[260px]" src="/assets/Landing.png" alt="Nexa AI logo" />
     </a>
   );
 }
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <header className="sticky top-4 z-20 mx-auto w-full max-w-[1280px] px-3 sm:px-6 lg:px-8">
@@ -39,10 +38,27 @@ export function Header() {
               </a>
             ))}
           </div>
-          <div className="hidden md:block">
-            <Button href="/chat" icon={false} className="min-h-9 px-4 py-2">
+          <div className="hidden items-center gap-3 md:flex">
+            {user && (
+              <button
+                className="flex min-h-9 items-center gap-2 rounded-[8px] border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-left text-xs font-semibold text-white transition hover:border-violetx-400/40 hover:bg-violetx-800/30"
+                type="button"
+                onClick={logout}
+                title="Sign out"
+              >
+                {user.photoURL ? (
+                  <img className="h-6 w-6 rounded-[6px] object-cover" src={user.photoURL} alt="" />
+                ) : (
+                  <span className="grid h-6 w-6 place-items-center rounded-[6px] bg-violetx-500 text-[10px]">
+                    {(user.displayName || user.email || "U").slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+                <span className="max-w-[120px] truncate">{user.displayName || user.email}</span>
+              </button>
+            )}
+            <WorkspaceButton icon={false} className="min-h-9 px-4 py-2">
               Open workspace
-            </Button>
+            </WorkspaceButton>
           </div>
           <button
             className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] border border-white/10 bg-white/[0.04] text-white md:hidden"

@@ -1,11 +1,14 @@
 import base64
-
-import google.generativeai as genai
+import json
+import socket
+import urllib.error
+import urllib.request
 
 from services.ai.errors import (
     APIResponseFormatError,
     APITimeoutError,
     InvalidModelError,
+    ProviderAuthenticationError,
     RateLimitError,
     UpstreamAPIError,
 )
@@ -13,77 +16,134 @@ from services.ai.providers.base import AIProvider, build_user_content, split_att
 
 
 class GeminiProvider(AIProvider):
-    def configure(self):
-        self.ensure_configured()
-        genai.configure(api_key=self.config.api_key)
-
     def normalize_model_name(self, name):
-        name = (name or "").strip()
+        return str(name or "").strip().removeprefix("models/")
 
-        if name.startswith("models/"):
-            return name.replace("models/", "", 1)
+    def headers(self, accept="application/json"):
+        return {
+            "Content-Type": "application/json",
+            "Accept": accept,
+            "X-Goog-Api-Key": self.config.api_key or "",
+            "User-Agent": "NexaAI/1.0",
+        }
 
-        return name
+    def list_models(self):
+        self.ensure_configured()
+        endpoint = f"{self.config.base_url.rstrip('/')}/models"
+        request = urllib.request.Request(endpoint, headers=self.headers(), method="GET")
+
+        try:
+            with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            raise self.wrap_http_error(error, "") from error
+        except (TimeoutError, socket.timeout) as error:
+            raise APITimeoutError("Gemini model detection timed out.", provider=self.provider_id) from error
+        except urllib.error.URLError as error:
+            raise UpstreamAPIError("Could not connect to Gemini.", provider=self.provider_id) from error
+        except json.JSONDecodeError as error:
+            raise APIResponseFormatError("Gemini returned invalid model data.", provider=self.provider_id) from error
+
+        return [
+            {
+                **model,
+                "id": self.normalize_model_name(model.get("name")),
+                "display_name": model.get("displayName"),
+            }
+            for model in payload.get("models", [])
+            if "generateContent" in model.get("supportedGenerationMethods", [])
+        ]
 
     def available_models(self):
         if not self.config.api_key:
             return super().available_models()
 
         try:
-            self.configure()
-            models = [
-                self.normalize_model_name(model.name)
-                for model in genai.list_models()
-                if "generateContent" in getattr(model, "supported_generation_methods", [])
-            ]
-            return models or super().available_models()
+            return [
+                self.normalize_model_name(model.get("id") if isinstance(model, dict) else model)
+                for model in self.list_models()
+            ] or super().available_models()
         except Exception:
             return super().available_models()
 
     def resolve_model(self, requested_model=None):
-        self.configure()
-        model = self.normalize_model_name(super().resolve_model(requested_model))
-        available_models = self.available_models()
+        self.ensure_configured()
+        return self.normalize_model_name(super().resolve_model(requested_model))
 
-        if requested_model and available_models and model not in available_models:
-            raise InvalidModelError(
-                f"Model '{model}' is not available for Gemini generateContent.",
-                provider=self.provider_id,
-                model=model,
-            )
+    def build_body(self, message, attachments):
+        text_content = build_user_content(message, attachments)
+        _text_attachments, image_attachments = split_attachments(attachments)
+        parts = [{"text": text_content}]
 
-        return model
+        for attachment in image_attachments:
+            _header, encoded_data = attachment["data_url"].split(";base64,", 1)
+            parts.append({
+                "inlineData": {
+                    "mimeType": attachment["mime_type"],
+                    "data": encoded_data,
+                },
+            })
+
+        return {"contents": [{"role": "user", "parts": parts}]}
+
+    def extract_text(self, payload):
+        try:
+            parts = payload["candidates"][0]["content"]["parts"]
+        except (KeyError, IndexError, TypeError):
+            return ""
+
+        return "".join(part.get("text", "") for part in parts if isinstance(part, dict))
 
     def generate_reply(self, message, model, attachments):
+        endpoint = f"{self.config.base_url.rstrip('/')}/models/{model}:generateContent"
+        payload = json.dumps(self.build_body(message, attachments)).encode("utf-8")
+        request = urllib.request.Request(endpoint, data=payload, headers=self.headers(), method="POST")
+
         try:
-            content = self.build_gemini_content(message, attachments)
-            response = genai.GenerativeModel(model).generate_content(content)
-            reply = getattr(response, "text", "").strip()
+            with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
+                data = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            raise self.wrap_http_error(error, model) from error
+        except (TimeoutError, socket.timeout) as error:
+            raise APITimeoutError("Gemini request timed out.", provider=self.provider_id, model=model) from error
+        except urllib.error.URLError as error:
+            raise UpstreamAPIError("Could not connect to Gemini.", provider=self.provider_id, model=model) from error
+        except json.JSONDecodeError as error:
+            raise APIResponseFormatError("Gemini returned invalid JSON.", provider=self.provider_id, model=model) from error
 
-            if not reply:
-                raise APIResponseFormatError(
-                    "Gemini did not return a response.",
-                    provider=self.provider_id,
-                    model=model,
-                )
-
-            return reply
-        except (APIResponseFormatError, InvalidModelError):
-            raise
-        except Exception as error:
-            raise self.wrap_gemini_error(error, model) from error
+        reply = self.extract_text(data).strip()
+        if not reply:
+            raise APIResponseFormatError("Gemini did not return a response.", provider=self.provider_id, model=model)
+        return reply
 
     def stream_reply(self, message, model, attachments):
+        endpoint = f"{self.config.base_url.rstrip('/')}/models/{model}:streamGenerateContent?alt=sse"
+        payload = json.dumps(self.build_body(message, attachments)).encode("utf-8")
+        request = urllib.request.Request(
+            endpoint,
+            data=payload,
+            headers=self.headers("text/event-stream"),
+            method="POST",
+        )
+
         try:
-            content = self.build_gemini_content(message, attachments)
-
-            for chunk in genai.GenerativeModel(model).generate_content(content, stream=True):
-                text = getattr(chunk, "text", "")
-
-                if text:
-                    yield text
-        except Exception as error:
-            raise self.wrap_gemini_error(error, model) from error
+            with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
+                for raw_line in response:
+                    line = raw_line.decode("utf-8", errors="replace").strip()
+                    if not line.startswith("data:"):
+                        continue
+                    try:
+                        text = self.extract_text(json.loads(line.removeprefix("data:").strip()))
+                    except json.JSONDecodeError:
+                        continue
+                    if text:
+                        yield text
+        except urllib.error.HTTPError as error:
+            raise self.wrap_http_error(error, model) from error
+        except (TimeoutError, socket.timeout) as error:
+            raise APITimeoutError("Gemini request timed out.", provider=self.provider_id, model=model) from error
+        except urllib.error.URLError as error:
+            raise UpstreamAPIError("Could not connect to Gemini.", provider=self.provider_id, model=model) from error
 
     def supports_images(self, model=None):
         if self.config.supports_images_override is not None:
@@ -92,55 +152,17 @@ class GeminiProvider(AIProvider):
         normalized_model = self.normalize_model_name(model or self.default_model).lower()
         return normalized_model.startswith("gemini-") and "tts" not in normalized_model
 
-    def build_gemini_content(self, message, attachments):
-        text_content = build_user_content(message, attachments)
-        _text_attachments, image_attachments = split_attachments(attachments)
-
-        if not image_attachments:
-            return text_content
-
-        parts = [text_content]
-
-        for attachment in image_attachments:
-            _header, encoded_data = attachment["data_url"].split(";base64,", 1)
-            parts.append({
-                "mime_type": attachment["mime_type"],
-                "data": base64.b64decode(encoded_data),
-            })
-
-        return parts
-
-    def wrap_gemini_error(self, error, model):
-        message = str(error) or error.__class__.__name__
-        lower_message = message.lower()
-
-        if "quota" in lower_message or "rate" in lower_message or "429" in lower_message:
-            return RateLimitError(
-                "Gemini rate limit reached. Please try again later.",
-                provider=self.provider_id,
-                model=model,
-                details=message,
-            )
-
-        if "timeout" in lower_message or "deadline" in lower_message:
-            return APITimeoutError(
-                "Gemini request timed out. Please try again.",
-                provider=self.provider_id,
-                model=model,
-                details=message,
-            )
-
-        if "model" in lower_message and ("not found" in lower_message or "invalid" in lower_message):
-            return InvalidModelError(
-                f"Invalid Gemini model '{model}'.",
-                provider=self.provider_id,
-                model=model,
-                details=message,
-            )
-
+    def wrap_http_error(self, error, model):
+        if error.code in {401, 403}:
+            return ProviderAuthenticationError("Invalid API key.", provider=self.provider_id, model=model)
+        if error.code == 429:
+            return RateLimitError("Gemini rate limit reached.", provider=self.provider_id, model=model)
+        if error.code in {408, 504}:
+            return APITimeoutError("Gemini request timed out.", provider=self.provider_id, model=model)
+        if error.code == 404:
+            return InvalidModelError(f"Invalid Gemini model '{model}'.", provider=self.provider_id, model=model)
         return UpstreamAPIError(
-            "Gemini request failed.",
+            f"Gemini request failed with status {error.code}.",
             provider=self.provider_id,
             model=model,
-            details=message,
         )

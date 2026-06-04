@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { AuthStatus } from "../auth/AuthStatus";
 import { Header } from "./Header";
 
 export function PageShell({ children }) {
@@ -21,6 +22,7 @@ export function PageShell({ children }) {
       <div className="relative z-10 min-h-[100dvh] w-full">
         <Header />
         <main className="site-main w-full overflow-x-hidden">{children}</main>
+        <AuthStatus />
       </div>
     </div>
   );

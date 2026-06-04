@@ -478,7 +478,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const conversation = getActiveConversation();
         const title = conversation.title || "New chat";
         els.activeTitle.textContent = title;
-        document.title = `${title} | AI Chat Workspace`;
+        document.title = `${title} | Nexa AI`;
     }
 
     function getProviderOptions() {
@@ -997,7 +997,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const empty = document.createElement("section");
         empty.className = "empty-state";
         empty.innerHTML = `
-            <span class="empty-kicker">AI workspace</span>
+            <span class="empty-kicker">AI Workspace</span>
             <h2>Start a focused AI research session.</h2>
             <p>Ask a question, choose a model, attach files, and keep every useful conversation organized in this workspace.</p>
             <div class="suggestions">

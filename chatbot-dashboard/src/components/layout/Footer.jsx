@@ -21,7 +21,7 @@ export function Footer() {
         <div className="max-w-sm">
           <Logo />
           <p className="mt-5 text-sm leading-6 text-mist-200">
-            Xtract keeps AI chats, files, model comparisons, and research history in one focused workspace.
+            Nexa AI is a multi-provider chatbot for connecting your own AI APIs, switching models, and keeping chats organized.
           </p>
           <form className="mt-6 grid max-w-xs grid-cols-[1fr_auto] overflow-hidden rounded-[7px] border border-white/10 bg-black/40">
             <input

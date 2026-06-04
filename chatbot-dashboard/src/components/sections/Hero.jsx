@@ -1,9 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/Button";
+import { WorkspaceButton } from "../auth/WorkspaceButton";
 import { OrbitalGlow } from "../ui/OrbitalGlow";
 import { SectionLabel } from "../ui/SectionLabel";
 import { StarField } from "../ui/StarField";
+import RotatingText from "../ui/RotatingText";
 import { TrustedBy } from "./TrustedBy";
 import { heroContainer, heroItem, premiumEase } from "../../utils/motion";
 
@@ -29,7 +31,7 @@ function HeroMockup() {
             <span className="h-2 w-12 rounded-full bg-violetx-500/[0.55]" />
           </div>
           <div className="grid gap-2">
-            {["Claude summary", "GPT-4o comparison", "PDF analyzed", "Research saved"].map((item, index) => (
+            {["Secure AI response", "Server managed", "PDF analyzed", "Research saved"].map((item, index) => (
               <div key={item} className="flex items-center justify-between rounded-[8px] border border-white/[0.08] bg-white/[0.035] px-3 py-2">
                 <span className="text-xs font-semibold text-mist-200">{item}</span>
                 <span className={`h-2 w-2 rounded-full ${index < 2 ? "bg-violetx-400" : "bg-white/[0.18]"}`} />
@@ -61,15 +63,29 @@ export function Hero() {
         </motion.div>
         <motion.h1
           variants={heroItem}
-          className="mt-8 max-w-4xl text-balance text-[3.25rem] font-semibold leading-[0.98] tracking-[-0.07em] text-white md:text-[4.9rem] lg:text-[5.35rem]"
+          className="mt-8 flex max-w-4xl flex-col items-center text-balance text-[3.25rem] font-semibold leading-[0.98] tracking-[-0.07em] text-white md:text-[4.9rem] lg:text-[5.35rem]"
         >
-          One AI workspace for models, files, and research.
+          <span>One AI Workspace to</span>
+          <RotatingText
+            texts={["Chat", "Switch", "Explore"]}
+            mainClassName="rotating-hero-word"
+            staggerFrom="last"
+            initial={{ y: "100%", opacity: 0, filter: "blur(8px)" }}
+            animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+            exit={{ y: "-120%", opacity: 0, filter: "blur(8px)" }}
+            staggerDuration={0.025}
+            splitLevelClassName="rotating-hero-word-inner"
+            elementLevelClassName="rotating-hero-letter"
+            transition={{ type: "spring", damping: 30, stiffness: 420 }}
+            rotationInterval={2000}
+            splitBy="characters"
+          />
         </motion.h1>
         <motion.p variants={heroItem} className="mt-6 max-w-2xl text-base leading-7 text-mist-200 md:text-lg">
-          Chat with multiple AI models, upload documents, compare responses, and keep every useful conversation organized in one place.
+          Chat securely, upload documents, refine responses, and keep every useful conversation organized in one place.
         </motion.p>
         <motion.div variants={heroItem} className="relative z-20 mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button href="/chat">Open Workspace</Button>
+          <WorkspaceButton>Open Workspace</WorkspaceButton>
           <Button href="#services" variant="secondary" icon={false}>
             Explore features
           </Button>
@@ -78,20 +94,6 @@ export function Hero() {
       </motion.div>
 
       <TrustedBy />
-
-      <motion.div
-        className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2"
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.05, duration: 0.8, ease: premiumEase }}
-      >
-        <a
-          href="#services"
-          className="rounded-[7px] border border-white/[0.12] bg-white/[0.035] px-4 py-2 text-sm font-semibold text-white transition duration-500 hover:border-violetx-400/50 hover:bg-violetx-800/30"
-        >
-          Platform Features
-        </a>
-      </motion.div>
     </section>
   );
 }

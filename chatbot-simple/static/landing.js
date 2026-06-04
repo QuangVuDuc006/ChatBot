@@ -1,7 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const THEME_STORAGE_KEY = "workspace_theme_preference";
     const nav = document.querySelector(".site-nav");
     const sentinel = document.querySelector(".nav-sentinel");
     const navToggle = document.querySelector(".nav-toggle");
+    const themeToggle = document.querySelector(".auth-theme-toggle");
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
     const revealItems = document.querySelectorAll(".reveal, .stagger > *");
     const year = document.querySelector("[data-year]");
     const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -9,6 +12,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (window.lucide) {
         window.lucide.createIcons();
+    }
+
+    function getStoredTheme() {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY) || "dark";
+        return ["system", "light", "dark"].includes(stored) ? stored : "dark";
+    }
+
+    function getResolvedTheme(theme = getStoredTheme()) {
+        if (theme === "system") {
+            return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+
+        return theme;
+    }
+
+    function applyTheme(theme = getStoredTheme()) {
+        const resolvedTheme = getResolvedTheme(theme);
+        document.documentElement.dataset.theme = resolvedTheme;
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+
+        if (metaTheme) {
+            metaTheme.setAttribute("content", resolvedTheme === "dark" ? "#020103" : "#f7f4ff");
+        }
+
+        if (themeToggle) {
+            const nextLabel = resolvedTheme === "dark" ? "Light" : "Dark";
+            const icon = themeToggle.querySelector("[data-theme-icon]");
+            if (icon) {
+                icon.textContent = nextLabel;
+            }
+            themeToggle.setAttribute("aria-label", `Switch to ${nextLabel.toLowerCase()} theme`);
+        }
+    }
+
+    applyTheme();
+
+    if (themeToggle) {
+        themeToggle.addEventListener("click", () => {
+            const nextTheme = getResolvedTheme() === "dark" ? "light" : "dark";
+            applyTheme(nextTheme);
+        });
     }
 
     if (year) {
